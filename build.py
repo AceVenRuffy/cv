@@ -64,6 +64,11 @@ AG_PATH = ('M89.6992 93.695C94.3659 97.195 101.366 94.8617 94.9492 88.445C75.699
 ANTIGRAVITY = tile(f'<g transform="translate(3.45,3.07) scale(0.19)"><path d="{AG_PATH}" fill="#3186FF"/></g>',
                    '#FFFFFF')
 
+# Wix Studio: offizielles App-Icon (Favicon von wix.com/studio) — schwarze Kachel mit Gradient-Kugel
+WIXSTUDIO = tile('<defs><linearGradient id="wxs" gradientUnits="userSpaceOnUse" x1="13.58" y1="3.37" x2="13.58" y2="36.2">'
+                 '<stop stop-color="#ffffff" stop-opacity="0"/><stop offset="1" stop-color="#0051EE"/></linearGradient></defs>'
+                 '<circle cx="13.58" cy="14" r="10.63" fill="url(#wxs)"/>', '#000000')
+
 # Pitch: offizielles Mark von pitch.com
 PITCH_PATH = ('M 26.58 12.713 C 26.283 16.726 23.089 20.355 18.984 20.521 L 18.984 17.484 C 18.978 14.697 '
               '17.002 12.304 14.267 11.77 L 4.09 9.793 L 4.09 2.935 C 4.09 2.058 4.482 1.228 5.158 0.67 '
@@ -88,7 +93,7 @@ SKILLS = [
     ('Claude Code',          si_tile('claude', '#262624', '#D97757')),
     ('Antigravity',          ANTIGRAVITY),
     ('Gemini',               GEMINI),
-    ('Wix Studio',           si_tile('wix', '#0C6EFC', '#FFFFFF', scale=0.72)),
+    ('Wix Studio',           WIXSTUDIO),
     ('Framer',               si_tile('framer', '#0F0F0F', '#FFFFFF', scale=0.62)),
     ('Pitch',                PITCH),
 ]
