@@ -83,7 +83,7 @@ SKILLS = [
     ('Adobe Premiere',       adobe('Pr', '#00005B', '#9999FF')),
     ('Figma',                FIGMA),
     ('Claude Code',          si_tile('claude', '#262624', '#D97757')),
-    ('Antigravity (Google)', ANTIGRAVITY),
+    ('Antigravity',          ANTIGRAVITY),
     ('Gemini',               GEMINI),
     ('Wix Studio',           si_tile('wix', '#0C6EFC', '#FFFFFF', scale=0.72)),
     ('Framer',               si_tile('framer', '#0F0F0F', '#FFFFFF', scale=0.62)),
