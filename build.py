@@ -41,11 +41,14 @@ def adobe(letters, bg, fg):
     return tile(f'<text x="14" y="18.5" text-anchor="middle" font-family="\'Plus Jakarta Sans\',sans-serif" '
                 f'font-size="11.5" font-weight="700" fill="{fg}">{letters}</text>', bg)
 
-FIGMA = tile('<path d="M14 5h-3a3 3 0 0 0 0 6h3z" fill="#F24E1E"/>'
-             '<path d="M14 5a3 3 0 0 1 3 3 3 3 0 0 1-3 3z" fill="#FF7262"/>'
-             '<path d="M14 11h-3a3 3 0 0 0 0 6h3z" fill="#A259FF"/>'
-             '<circle cx="17" cy="14" r="3" fill="#1ABCFE"/>'
-             '<path d="M14 17h-3a3 3 0 1 0 3 3z" fill="#0ACF83"/>', '#2E2E2D')
+# Offizielles Figma-Logo (viewBox 0 0 38 57), skaliert in die 28er-Kachel
+FIGMA = tile('<g transform="translate(8,5) scale(0.3158)">'
+             '<path fill="#1ABCFE" d="M19 28.5c0-5.247 4.253-9.5 9.5-9.5s9.5 4.253 9.5 9.5-4.253 9.5-9.5 9.5-9.5-4.253-9.5-9.5z"/>'
+             '<path fill="#0ACF83" d="M0 47.5C0 42.253 4.253 38 9.5 38H19v9.5c0 5.247-4.253 9.5-9.5 9.5S0 52.747 0 47.5z"/>'
+             '<path fill="#FF7262" d="M19 0v19h9.5c5.247 0 9.5-4.253 9.5-9.5S33.747 0 28.5 0H19z"/>'
+             '<path fill="#F24E1E" d="M0 9.5C0 14.747 4.253 19 9.5 19H19V0H9.5C4.253 0 0 4.253 0 9.5z"/>'
+             '<path fill="#A259FF" d="M0 28.5C0 33.747 4.253 38 9.5 38H19V19H9.5C4.253 19 0 23.253 0 28.5z"/>'
+             '</g>', '#2E2E2D')
 
 GEMINI = tile('<defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1">'
               '<stop offset="0" stop-color="#4285F4"/><stop offset=".55" stop-color="#9B72CB"/>'
