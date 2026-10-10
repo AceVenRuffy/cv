@@ -129,8 +129,8 @@ EN = dict(
          "To build a second foothold, I founded a start-up together with two friends. I took on conceptual work on the development and refinement of the business concept as well as all design-related tasks, such as creating the visual identity."),
         ('September 2015 – April 2017','Freelancing','for Mad About Hair &amp; TAM Fashion',
          "During this time I worked for various clients. My tasks included the conception and creation of visual identities, packaging design, web design, and retouching."),
-        ('October 2011 – April 2017','Honorary employee','for the AWO at the Katharinenschule Hafencity',
-         "During my studies, I volunteered for the AWO in the afternoon care of the Katharinenschule in Hamburg&rsquo;s Hafencity — supporting children (grades 1–4) through lunch, games, and homework, and later running my own courses for smaller groups, including &ldquo;Lego architecture&rdquo;, streetball, and drawing."),
+        ('October 2011 – April 2017','After-school care worker','for the AWO at the Katharinenschule Hafencity',
+         "During my studies, I worked for the AWO on a freelance basis in the after-school care of the Katharinenschule in Hamburg&rsquo;s Hafencity — supporting children (grades 1–4) through lunch, games, and homework, and later running my own courses for smaller groups, including &ldquo;Lego architecture&rdquo;, streetball, and drawing."),
         ('February 2013 – July 2013','Internship Art Direction','at Jung von Matt/Fleet',
          "During my internship in the creative department of Jung von Matt/Fleet, I developed and visually implemented compelling advertising ideas for well-known clients such as Sixt, GE, Edeka, Zalando, and Daimler. Working closely with the art directors, the creative director, and the management, I gained valuable agency experience."),
     ],
@@ -160,8 +160,8 @@ DE = dict(
          "Um ein zweites Standbein aufzubauen, habe ich gemeinsam mit zwei Freunden ein Start-up gegründet. Ich übernahm konzeptionelle Aufgaben bei der Entwicklung und Schärfung des Geschäftskonzepts sowie alle designrelevanten Aufgaben — etwa die Gestaltung der visuellen Identität."),
         ('September 2015 – April 2017','Freelancing','für Mad About Hair &amp; TAM Fashion',
          "In dieser Zeit habe ich für verschiedene Kunden gearbeitet. Zu meinen Aufgaben gehörten Konzeption und Gestaltung visueller Identitäten, Packaging Design, Webdesign und Retusche."),
-        ('Oktober 2011 – April 2017','Ehrenamtliche Tätigkeit','für die AWO an der Katharinenschule Hafencity',
-         "Während meines Studiums habe ich mich bei der AWO in der Nachmittagsbetreuung der Katharinenschule in der Hamburger Hafencity engagiert — von der Begleitung der Kinder (Klasse 1–4) bei Mittagessen, Spielen und Hausaufgaben bis zu eigenen Kursen für kleinere Gruppen, darunter &bdquo;Lego-Architektur&ldquo;, Streetball und Zeichnen."),
+        ('Oktober 2011 – April 2017','Honorarkraft','bei der AWO an der Katharinenschule Hafencity',
+         "Während meines Studiums habe ich bei der AWO in der Nachmittagsbetreuung der Katharinenschule in der Hamburger Hafencity gearbeitet — von der Begleitung der Kinder (Klasse 1–4) bei Mittagessen, Spielen und Hausaufgaben bis zu eigenen Kursen für kleinere Gruppen, darunter &bdquo;Lego-Architektur&ldquo;, Streetball und Zeichnen."),
         ('Februar 2013 – Juli 2013','Praktikum Art Direction','bei Jung von Matt/Fleet',
          "Im Rahmen meines Praktikums in der Kreation von Jung von Matt/Fleet habe ich für namhafte Kunden wie Sixt, GE, Edeka, Zalando und Daimler aussagekräftige Werbeideen entwickelt und visuell umgesetzt. In enger Zusammenarbeit mit den Art Directors, dem Creative Director und der Geschäftsführung konnte ich wertvolle Agenturerfahrung sammeln."),
     ],
@@ -387,7 +387,7 @@ def render(c):
 </body>
 </html>'''
 
-OUT = '/Users/edgarheinz/Projects/Lebenslauf/docs'
+OUT = os.path.join(HERE, 'docs')
 os.makedirs(os.path.join(OUT, 'en'), exist_ok=True)
 open(os.path.join(OUT, 'index.html'), 'w', encoding='utf-8').write(render(DE))
 open(os.path.join(OUT, 'en', 'index.html'), 'w', encoding='utf-8').write(render(EN))
