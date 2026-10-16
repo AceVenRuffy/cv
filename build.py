@@ -117,9 +117,9 @@ EN = dict(
     edu=[('A-Levels','', 'Otto-Hahn-Gymnasium<br>Geesthacht, Germany','2001 – 2010'),
          ('Bachelor of Arts','Communication Design','University of Applied Sciences<br>Hamburg, Germany','2011 – 2016')],
     jobs=[
-        ('June 2026 – October 2026','Senior Brand Designer','at awork',
+        ('June 2026 – September 2026','Senior Brand Designer','at awork',
          "As Brand Lead, I owned awork&rsquo;s visual identity and drove its continuous evolution, keeping the brand distinctive and recognisable in a crowded SaaS market. I set the art and creative direction across all touchpoints, from ads, web, and sales materials to events and content, and raised the bar for a cohesive, credible brand appearance. With clear guidelines, templates, and hands-on enablement, I empowered the team to create on-brand independently: fast and without design bottlenecks."),
-        ('December 2023 – June 2026','Design Lead','at halpy',
+        ('December 2023 – May 2026','Design Lead','at halpy',
          "As Design Lead, I was responsible for creative and art direction across all touchpoints — print, digital, and web. I built digital products hands-on through vibe coding (app features, widgets, and more), shot and edited video content, and shaped halpy&rsquo;s social media presence. From first concept to final asset, I owned the company&rsquo;s entire visual output."),
         ('January 2021 – December 2023','Senior Communication Designer','at THINKS Design GmbH',
          "As a senior communication designer, I led a small team of working students and interns and coordinated internal as well as external projects — from planning and task distribution to design execution, client meetings, and the complete client communication. I was also responsible for the branding and packaging design of STRYVE, the company&rsquo;s in-house brand, and redesigned and maintained the THINKS Design website."),
@@ -148,9 +148,9 @@ DE = dict(
     edu=[('Abitur','','Otto-Hahn-Gymnasium<br>Geesthacht','2001 – 2010'),
          ('Bachelor of Arts','Kommunikationsdesign','Hochschule für Angewandte<br>Wissenschaften Hamburg','2011 – 2016')],
     jobs=[
-        ('Juni 2026 – Oktober 2026','Senior Brand Designer','bei awork',
+        ('Juni 2026 – September 2026','Senior Brand Designer','bei awork',
          "Als Brand Lead verantwortete ich die visuelle Identität von awork und entwickelte sie kontinuierlich weiter, damit die Marke in einem dicht besetzten SaaS-Markt unverwechselbar und wiedererkennbar bleibt. Ich gab die Art- und Creative Direction über alle Touchpoints vor, von Ads, Web und Sales-Materialien bis zu Events und Content, und sorgte für einen konsistenten, glaubwürdigen Markenauftritt. Mit klaren Guidelines, Templates und Hands-on-Enablement befähigte ich das Team, eigenständig on-brand zu arbeiten: schnell und ohne Design-Bottlenecks."),
-        ('Dezember 2023 – Juni 2026','Design Lead','bei halpy',
+        ('Dezember 2023 – Mai 2026','Design Lead','bei halpy',
          "Als Design Lead verantwortete ich die Creative- und Art Direction über alle Touchpoints — Print, Digital und Web. Per Vibe Coding habe ich digitale Produkte wie App-Features und Widgets hands-on gebaut, Videos gedreht und geschnitten und den Social-Media-Auftritt von halpy geprägt. Vom ersten Konzept bis zum finalen Asset lag der gesamte visuelle Output des Unternehmens in meiner Hand."),
         ('Januar 2021 – Dezember 2023','Senior Communication Designer','bei THINKS Design GmbH',
          "Als Senior Communication Designer habe ich ein kleines Team aus Werkstudenten und Praktikanten geführt und interne wie externe Projekte koordiniert — von Planung und Aufgabenverteilung über Design und Umsetzung bis zu Meetings und der kompletten Kundenkommunikation. Zusätzlich verantwortete ich Branding und Packaging Design der hauseigenen Marke STRYVE und habe die Website von THINKS Design neu gestaltet und betreut."),
