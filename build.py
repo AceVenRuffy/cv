@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
-# Generiert lebenslauf-de.html und resume-en.html in /Users/edgarheinz/Projects/Lebenslauf
-# Benötigt: figure_cut.png (Kopf+Hände-Freisteller), pjs-latin.woff2 (Plus Jakarta Sans latin, variabel)
-import base64, re, os
+# Generiert die CV-Seite (DE: docs/index.html, EN: docs/en/index.html) im Stil von edgarheinz.com
+# Benötigt: figure_cut.webp (Kopf+Hände-Freisteller), pjs-latin.woff2 (Plus Jakarta Sans latin, variabel)
+# python3 build.py         schreibt die beiden Seiten
+# python3 build.py --pdf   schreibt zusätzlich die beiden PDFs (braucht Google Chrome)
+import base64, re, os, subprocess, sys, urllib.parse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 def b64(fn):
@@ -16,12 +18,32 @@ def lucide(fn):
     s = re.sub(r'<!--.*?-->', '', s, flags=re.S)
     inner = re.search(r'<svg\b[^>]*>(.*)</svg>', s, re.S).group(1)
     inner = re.sub(r'\s+', ' ', inner).strip()
-    return ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
-            f'stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">{inner}</svg>')
+    return line(inner)
 
-LUCIDE = {k: lucide(k) for k in ('globe', 'mail', 'phone', 'house', 'sun', 'moon')}
-LINKEDIN = ('<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">'
-            '<path d="M4.98 3.5A2.5 2.5 0 1 1 0 3.5a2.5 2.5 0 0 1 4.98 0zM.3 8.2h4.4V24H.3zM8.6 8.2h4.2v2.2h.1c.6-1.1 2-2.3 4.2-2.3 4.5 0 5.3 3 5.3 6.8V24h-4.4v-7.9c0-1.9 0-4.3-2.6-4.3s-3 2-3 4.1V24H8.6z"/></svg>')
+# Strichstärke 1.5 wie die Icons auf edgarheinz.com
+def line(inner):
+    return ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" '
+            f'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{inner}</svg>')
+
+ICON = {k: lucide(k) for k in ('globe', 'phone', 'house')}
+# dieselben Zeichnungen wie auf der Website (assets/js/main.js)
+ICON.update(
+    mail=line('<circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/>'),
+    linkedin=line('<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 11v6M8 7.5v.01M12 17v-3.5a2.5 2.5 0 0 1 5 0V17M12 11v6"/>'),
+    moon=line('<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>'),
+    sun=line('<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4l1.4-1.4M17 7l1.4-1.4"/>'),
+    download=line('<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>'),
+    arrow=('<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M221.66,133.66l-72,72a8,8,0,0,1-11.32-11.32L196.69,136H40a8,8,0,0,1,0-16H196.69L138.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,221.66,133.66Z"/></svg>'),
+)
+
+# Bildmarke von edgarheinz.com (Lächeln + Brille)
+LOGO_SMILE = 'M13.16,22.5c-3.47.01-6.87-1.39-9.32-3.86l3.38-3.38c3.13,3.26,8.75,3.26,11.88,0l3.38,3.38c-2.45,2.47-5.85,3.87-9.32,3.86Z'
+LOGO_GLASSES = 'M25.3,4.19C24.64,2.62,23.69,1.21,22.48,0l-3.38,3.38c.99.98,1.73,2.22,2.12,3.55H5.1c.39-1.34,1.13-2.57,2.12-3.55L3.84,0C.76,3-.53,7.49.2,11.71h25.92c.37-2.48.23-5.22-.82-7.52Z'
+LOGO = ('<svg class="logo" viewBox="0 0 26.31 22.5" fill="currentColor" aria-hidden="true">'
+        f'<path class="logo-smile" d="{LOGO_SMILE}"/><path d="{LOGO_GLASSES}"/></svg>')
+FAVICON = 'data:image/svg+xml,' + urllib.parse.quote(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#fff"/>'
+    f'<g transform="translate(14.5,17) scale(1.33)" fill="#1f1f1f"><path d="{LOGO_SMILE}"/><path d="{LOGO_GLASSES}"/></g></svg>')
 
 # ---------- Skill-Logos ----------
 def si_path(fn):
@@ -99,218 +121,491 @@ SKILLS = [
 ]
 
 # ---------- Inhalte ----------
+# Texte ohne Gedankenstriche (nur Bis-Striche in Zeiträumen). Bereiche heißen wie auf der Website.
+# Expertise: das Wichtigste zuerst, immer zwei Pills pro Zeile (je zwei aufeinanderfolgende bilden ein Paar).
+# Ein Paar muss in die schmalste Seitenspalte passen (PDF 204 px, Tablet 256 px), am breitesten ist
+# Art Direction + Creative Direction.
 COMMON = dict(
     linkedin='linkedin.com/in/edgar-heinz/', site='edgarheinz.com',
-    mail='eh.edgarheinz@gmail.com', phone='+49 176 7021 4158',
+    mail='hi@edgarheinz.com', phone='+49 176 7021 4158',
     addr='Am Schilfpark 12g<br>21029 Hamburg, Germany',
 )
 
 EN = dict(
-    lang='en', other_file='../', other_label='DE',
-    title='Edgar Heinz — Resume', print_label='Save as PDF',
-    meta='Edgar Heinz — Senior Visual Designer from Hamburg. Resume: brand design, art direction, web design, and vibe coding.',
+    lang='en', home='../', de_href='../', en_href='./', canonical='https://cv.edgarheinz.com/en/',
+    title='Resume | Edgar Heinz',
+    pdf_label='Save as PDF', pdf_short='PDF', pdf_file='../Edgar-Heinz-Resume.pdf',
+    theme_label='Dark mode', lang_label='Language', logo_label='To the portfolio',
+    meta='Edgar Heinz, Senior Visual Designer from Hamburg. Resume: brand design, art direction, web design, and vibe coding.',
     hi="Hi, I&rsquo;m", role='Senior Visual Designer',
-    h_exp='Professional experience', h_expertise='Expertise', h_skills='Skills',
+    h_exp='Professional experience', h_contact='Contact', h_expertise='Expertise', h_skills='Skills',
     h_lang='Languages', h_edu='Education',
-    expertise=['Art Direction','Creative Direction','Brand Design','Web Design','Advertising','Event Design','Vibe Coding'],
+    expertise=['Art Direction','Creative Direction','Brand Design','Web Design','Packaging','Print Design','Advertising','Event Design',
+               'Illustration','Presentations','Motion Design','Video','Social Media','Vibe Coding'],
     langs=[('German','Native'),('English','Fluent'),('Russian','Basic')],
-    edu=[('A-Levels','', 'Otto-Hahn-Gymnasium<br>Geesthacht, Germany','2001 – 2010'),
-         ('Bachelor of Arts','Communication Design','University of Applied Sciences<br>Hamburg, Germany','2011 – 2016')],
+    edu=[('Bachelor of Arts','Communication Design','University of Applied Sciences<br>Hamburg, Germany','2011 – 2016'),
+         ('A-Levels','', 'Otto-Hahn-Gymnasium<br>Geesthacht, Germany','2001 – 2010')],
+    cta_tag='Available for new projects', cta_a="Let&rsquo;s", cta_b='Connect',
+    cta_text='Got a project in mind or just a question? Drop me a line.',
+    cta_mail='Get in touch', cta_site='View portfolio',
     jobs=[
+        ('November 2026 – today','Freelance Designer','Self-employed',
+         "As a freelance designer, I support companies with everything that makes their brand visible: from brand identity and website to packaging, print, and campaigns. One point of contact for everything, with websites and tools built through vibe coding if needed."),
         ('June 2026 – September 2026','Senior Brand Designer','at awork',
          "As Brand Lead, I owned awork&rsquo;s visual identity and drove its continuous evolution, keeping the brand distinctive and recognisable in a crowded SaaS market. I set the art and creative direction across all touchpoints, from ads, web, and sales materials to events and content, and raised the bar for a cohesive, credible brand appearance. With clear guidelines, templates, and hands-on enablement, I empowered the team to create on-brand independently: fast and without design bottlenecks."),
         ('December 2023 – May 2026','Design Lead','at halpy',
-         "As Design Lead, I was responsible for creative and art direction across all touchpoints — print, digital, and web. I built digital products hands-on through vibe coding (app features, widgets, and more), shot and edited video content, and shaped halpy&rsquo;s social media presence. From first concept to final asset, I owned the company&rsquo;s entire visual output."),
+         "As Design Lead, I was responsible for creative and art direction across all touchpoints: print, digital, and web. I built digital products hands-on through vibe coding (app features, widgets, and more), shot and edited video content, and shaped halpy&rsquo;s social media presence. From first concept to final asset, I owned the company&rsquo;s entire visual output."),
         ('January 2021 – December 2023','Senior Communication Designer','at THINKS Design GmbH',
-         "As a senior communication designer, I led a small team of working students and interns and coordinated internal as well as external projects — from planning and task distribution to design execution, client meetings, and the complete client communication. I was also responsible for the branding and packaging design of STRYVE, the company&rsquo;s in-house brand, and redesigned and maintained the THINKS Design website."),
+         "As a senior communication designer, I led a small team of working students and interns and coordinated internal as well as external projects, from planning and task distribution to design execution, client meetings, and the complete client communication. I was also responsible for the branding and packaging design of STRYVE, the company&rsquo;s in-house brand, and redesigned and maintained the THINKS Design website."),
         ('April 2017 – December 2020','Communication Designer','at Wunder Mobility',
-         "As the first designer in the marketing team, my primary task was to develop a holistic branding and a corresponding guideline for a uniform, authentic, and consistent brand appearance. By introducing an illustration style — used from then on in apps, websites, ads, and animations — I gave Wunder a distinctive, recognisable look. Beyond that, I was responsible for event design, advertising, web design, merchandise, animations, and presentations, with a growing focus on web design."),
+         "As the first designer in the marketing team, my primary task was to develop a holistic branding and a corresponding guideline for a uniform, authentic, and consistent brand appearance. By introducing an illustration style that was used from then on in apps, websites, ads, and animations, I gave Wunder a distinctive, recognisable look. Beyond that, I was responsible for event design, advertising, web design, merchandise, animations, and presentations, with a growing focus on web design."),
         ('March 2016 – July 2017','Startup foundation','for Stickerbuddy',
          "To build a second foothold, I founded a start-up together with two friends. I took on conceptual work on the development and refinement of the business concept as well as all design-related tasks, such as creating the visual identity."),
         ('September 2015 – April 2017','Freelancing','for Mad About Hair &amp; TAM Fashion',
          "During this time I worked for various clients. My tasks included the conception and creation of visual identities, packaging design, web design, and retouching."),
         ('October 2011 – April 2017','After-school care worker','for the AWO at the Katharinenschule Hafencity',
-         "During my studies, I worked for the AWO on a freelance basis in the after-school care of the Katharinenschule in Hamburg&rsquo;s Hafencity — supporting children (grades 1–4) through lunch, games, and homework, and later running my own courses for smaller groups, including &ldquo;Lego architecture&rdquo;, streetball, and drawing."),
+         "During my studies, I worked for the AWO on a freelance basis in the after-school care of the Katharinenschule in Hamburg&rsquo;s Hafencity: supporting children (grades 1–4) through lunch, games, and homework, and later running my own courses for smaller groups, including &ldquo;Lego architecture&rdquo;, streetball, and drawing."),
         ('February 2013 – July 2013','Internship Art Direction','at Jung von Matt/Fleet',
          "During my internship in the creative department of Jung von Matt/Fleet, I developed and visually implemented compelling advertising ideas for well-known clients such as Sixt, GE, Edeka, Zalando, and Daimler. Working closely with the art directors, the creative director, and the management, I gained valuable agency experience."),
     ],
 )
 
 DE = dict(
-    lang='de', other_file='en/', other_label='EN',
-    title='Edgar Heinz — Lebenslauf', print_label='Als PDF speichern',
-    meta='Edgar Heinz — Senior Visual Designer aus Hamburg. Lebenslauf: Brand Design, Art Direction, Webdesign und Vibe Coding.',
+    lang='de', home='./', de_href='./', en_href='en/', canonical='https://cv.edgarheinz.com/',
+    title='Lebenslauf | Edgar Heinz',
+    pdf_label='Als PDF speichern', pdf_short='PDF', pdf_file='Edgar-Heinz-Lebenslauf.pdf',
+    theme_label='Dunkles Design', lang_label='Sprache', logo_label='Zum Portfolio',
+    meta='Edgar Heinz, Senior Visual Designer aus Hamburg. Lebenslauf: Brand Design, Art Direction, Webdesign und Vibe Coding.',
     hi='Hi, ich bin', role='Senior Visual Designer',
-    h_exp='Berufserfahrung', h_expertise='Expertise', h_skills='Skills',
+    h_exp='Berufserfahrung', h_contact='Kontakt', h_expertise='Expertise', h_skills='Skills',
     h_lang='Sprachen', h_edu='Ausbildung',
-    expertise=['Art Direction','Creative Direction','Brand Design','Webdesign','Advertising','Event Design','Vibe Coding'],
+    expertise=['Art Direction','Creative Direction','Brand Design','Webdesign','Packaging','Printdesign','Werbung','Eventdesign',
+               'Illustration','Präsentationen','Motion Design','Video','Social Media','Vibe Coding'],
     langs=[('Deutsch','Muttersprache'),('Englisch','Fließend'),('Russisch','Grundkenntnisse')],
-    edu=[('Abitur','','Otto-Hahn-Gymnasium<br>Geesthacht','2001 – 2010'),
-         ('Bachelor of Arts','Kommunikationsdesign','Hochschule für Angewandte<br>Wissenschaften Hamburg','2011 – 2016')],
+    edu=[('Bachelor of Arts','Kommunikationsdesign','Hochschule für Angewandte<br>Wissenschaften Hamburg','2011 – 2016'),
+         ('Abitur','','Otto-Hahn-Gymnasium<br>Geesthacht','2001 – 2010')],
+    cta_tag='Offen für neue Projekte', cta_a='Lass uns', cta_b='sprechen',
+    cta_text='Du hast ein Projekt im Kopf oder einfach eine Frage? Schreib mir.',
+    cta_mail='Kontakt aufnehmen', cta_site='Zum Portfolio',
     jobs=[
+        ('November 2026 – heute','Freiberuflicher Designer','Selbstständig',
+         "Als freiberuflicher Designer begleite ich Unternehmen bei allem, was ihre Marke sichtbar macht: vom Markenauftritt über die Website bis zu Verpackung, Print und Kampagnen. Ein Ansprechpartner für alles, auf Wunsch auch mit Websites und Tools per Vibe Coding."),
         ('Juni 2026 – September 2026','Senior Brand Designer','bei awork',
          "Als Brand Lead verantwortete ich die visuelle Identität von awork und entwickelte sie kontinuierlich weiter, damit die Marke in einem dicht besetzten SaaS-Markt unverwechselbar und wiedererkennbar bleibt. Ich gab die Art- und Creative Direction über alle Touchpoints vor, von Ads, Web und Sales-Materialien bis zu Events und Content, und sorgte für einen konsistenten, glaubwürdigen Markenauftritt. Mit klaren Guidelines, Templates und Hands-on-Enablement befähigte ich das Team, eigenständig on-brand zu arbeiten: schnell und ohne Design-Bottlenecks."),
         ('Dezember 2023 – Mai 2026','Design Lead','bei halpy',
-         "Als Design Lead verantwortete ich die Creative- und Art Direction über alle Touchpoints — Print, Digital und Web. Per Vibe Coding habe ich digitale Produkte wie App-Features und Widgets hands-on gebaut, Videos gedreht und geschnitten und den Social-Media-Auftritt von halpy geprägt. Vom ersten Konzept bis zum finalen Asset lag der gesamte visuelle Output des Unternehmens in meiner Hand."),
+         "Als Design Lead verantwortete ich die Creative- und Art Direction über alle Touchpoints: Print, Digital und Web. Per Vibe Coding habe ich digitale Produkte wie App-Features und Widgets hands-on gebaut, Videos gedreht und geschnitten und den Social-Media-Auftritt von halpy geprägt. Vom ersten Konzept bis zum finalen Asset lag der gesamte visuelle Output des Unternehmens in meiner Hand."),
         ('Januar 2021 – Dezember 2023','Senior Communication Designer','bei THINKS Design GmbH',
-         "Als Senior Communication Designer habe ich ein kleines Team aus Werkstudenten und Praktikanten geführt und interne wie externe Projekte koordiniert — von Planung und Aufgabenverteilung über Design und Umsetzung bis zu Meetings und der kompletten Kundenkommunikation. Zusätzlich verantwortete ich Branding und Packaging Design der hauseigenen Marke STRYVE und habe die Website von THINKS Design neu gestaltet und betreut."),
+         "Als Senior Communication Designer habe ich ein kleines Team aus Werkstudenten und Praktikanten geführt und interne wie externe Projekte koordiniert, von Planung und Aufgabenverteilung über Design und Umsetzung bis zu Meetings und der kompletten Kundenkommunikation. Zusätzlich verantwortete ich Branding und Packaging Design der hauseigenen Marke STRYVE und habe die Website von THINKS Design neu gestaltet und betreut."),
         ('April 2017 – Dezember 2020','Communication Designer','bei Wunder Mobility',
-         "Als erster Designer im Marketing-Team war es meine Hauptaufgabe, ein ganzheitliches Branding samt Guideline für einen einheitlichen, authentischen und konsistenten Markenauftritt zu entwickeln. Mit der Einführung eines Illustrationsstils — fortan in Apps, Websites, Ads und Animationen im Einsatz — habe ich Wunder einen unverwechselbaren Look gegeben. Darüber hinaus verantwortete ich Event Design, Advertising, Webdesign, Merchandise, Animationen und Präsentationen — mit wachsendem Schwerpunkt auf Webdesign."),
+         "Als erster Designer im Marketing-Team war es meine Hauptaufgabe, ein ganzheitliches Branding samt Guideline für einen einheitlichen, authentischen und konsistenten Markenauftritt zu entwickeln. Mit der Einführung eines Illustrationsstils, der fortan in Apps, Websites, Ads und Animationen im Einsatz war, habe ich Wunder einen unverwechselbaren Look gegeben. Darüber hinaus verantwortete ich Eventdesign, Werbung, Webdesign, Merchandise, Animationen und Präsentationen, mit wachsendem Schwerpunkt auf Webdesign."),
         ('März 2016 – Juli 2017','Startup-Gründung','Stickerbuddy',
-         "Um ein zweites Standbein aufzubauen, habe ich gemeinsam mit zwei Freunden ein Start-up gegründet. Ich übernahm konzeptionelle Aufgaben bei der Entwicklung und Schärfung des Geschäftskonzepts sowie alle designrelevanten Aufgaben — etwa die Gestaltung der visuellen Identität."),
+         "Um ein zweites Standbein aufzubauen, habe ich gemeinsam mit zwei Freunden ein Start-up gegründet. Ich übernahm konzeptionelle Aufgaben bei der Entwicklung und Schärfung des Geschäftskonzepts sowie alle designrelevanten Aufgaben, etwa die Gestaltung der visuellen Identität."),
         ('September 2015 – April 2017','Freelancing','für Mad About Hair &amp; TAM Fashion',
          "In dieser Zeit habe ich für verschiedene Kunden gearbeitet. Zu meinen Aufgaben gehörten Konzeption und Gestaltung visueller Identitäten, Packaging Design, Webdesign und Retusche."),
         ('Oktober 2011 – April 2017','Honorarkraft','bei der AWO an der Katharinenschule Hafencity',
-         "Während meines Studiums habe ich bei der AWO in der Nachmittagsbetreuung der Katharinenschule in der Hamburger Hafencity gearbeitet — von der Begleitung der Kinder (Klasse 1–4) bei Mittagessen, Spielen und Hausaufgaben bis zu eigenen Kursen für kleinere Gruppen, darunter &bdquo;Lego-Architektur&ldquo;, Streetball und Zeichnen."),
+         "Während meines Studiums habe ich bei der AWO in der Nachmittagsbetreuung der Katharinenschule in der Hamburger Hafencity gearbeitet: von der Begleitung der Kinder (Klasse 1–4) bei Mittagessen, Spielen und Hausaufgaben bis zu eigenen Kursen für kleinere Gruppen, darunter &bdquo;Lego-Architektur&ldquo;, Streetball und Zeichnen."),
         ('Februar 2013 – Juli 2013','Praktikum Art Direction','bei Jung von Matt/Fleet',
          "Im Rahmen meines Praktikums in der Kreation von Jung von Matt/Fleet habe ich für namhafte Kunden wie Sixt, GE, Edeka, Zalando und Daimler aussagekräftige Werbeideen entwickelt und visuell umgesetzt. In enger Zusammenarbeit mit den Art Directors, dem Creative Director und der Geschäftsführung konnte ich wertvolle Agenturerfahrung sammeln."),
     ],
 )
 
+# ---------- Gestaltung: Farben, Schrift, Flächen und Bausteine wie auf edgarheinz.com ----------
 CSS = '''
 @font-face{
-  font-family:'Plus Jakarta Sans';
+  font-family:"Plus Jakarta Sans";
   font-style:normal;
   font-weight:200 800;
   font-display:swap;
-  src:url(data:font/woff2;base64,FONT_B64) format('woff2');
+  src:url(data:font/woff2;base64,FONT_B64) format("woff2");
 }
 :root{
-  --bg:#1b1b1a; --line:#3d3d3b; --accent:#f70059;
-  --text:#f2f2f0; --soft:#dcdcda; --body:#e4e4e1; --muted:#a9a9a5;
-  --chip:rgba(45,45,43,.92); --chip-border:#3d3d3b;
+  --bg:#e8e8e8; --ink:#000; --body:rgba(0,0,0,.72); --muted:rgba(0,0,0,.5); --faint:rgba(0,0,0,.25); --hairline:rgba(0,0,0,.1);
+  --accent:#ff3700; --accent-tint:#ffe8e0;
+  --surface:#fff; --card:#f4f4f4;
+  --solid:#000; --on-solid:#fff; --solid-hover:#3d3d3d;
+  --edge:rgba(0,0,0,.06); --halo:rgba(255,255,255,.25); --logo:#1f1f1f;
+  --bg-glow:#f8f8f8; --beam:1; --noise:.05; --noise-filter:none;
+  --font:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --gutter:clamp(24px,8.33vw,120px); --max:1200px;
+  --ring:0 0 0 8px var(--halo),12px 16px 16px rgba(0,0,0,.1);
+  --btn-drop:.57px .57px 1.76px -.42px rgba(0,0,0,.18),1.45px 1.45px 4.5px -.83px rgba(0,0,0,.18),2.9px 2.9px 9.01px -1.25px rgba(0,0,0,.18),5.49px 5.49px 17.09px -1.67px rgba(0,0,0,.18),10.92px 10.92px 33.97px -2.08px rgba(0,0,0,.18),24px 24px 74.67px -2.5px rgba(0,0,0,.18);
+  --btn-glow:inset 0 -16px 48px 0 #000;
+  --btn-shadow:var(--btn-drop),var(--btn-glow);
+  --ease:cubic-bezier(.22,1,.36,1);
 }
-:root[data-theme="light"]{
-  --bg:#f7f5f2; --line:#d9d6d0; --accent:#e80054;
-  --text:#1d1d1b; --soft:#3c3c39; --body:#3a3a37; --muted:#75756f;
-  --chip:rgba(255,255,255,.92); --chip-border:#d9d6d0;
+/* Dunkles Design: hell ist Standard, gedruckt wird immer hell */
+@media screen{
+  :root[data-theme="dark"]{
+    color-scheme:dark;
+    --bg:#121212; --ink:#f4f4f4; --body:rgba(255,255,255,.75); --muted:rgba(255,255,255,.55); --faint:rgba(255,255,255,.22); --hairline:rgba(255,255,255,.1);
+    --accent-tint:#3b1a0f;
+    --surface:#2a2a2a; --card:#1e1e1e;
+    --solid:#fff; --on-solid:#000; --solid-hover:#d6d6d6;
+    --edge:rgba(255,255,255,.08); --halo:rgba(255,255,255,.05); --logo:#fff;
+    --bg-glow:#1f1f1f; --beam:.05; --noise:.07; --noise-filter:invert(1);
+    --ring:0 0 0 8px var(--halo),12px 16px 16px rgba(0,0,0,.3);
+    --btn-shadow:var(--btn-drop);
+  }
+  :root[data-theme="dark"] .page-bg{
+    height:100vh;
+    background:radial-gradient(100% 100% at 0% 0%,#3d3d3d 0%,var(--bg) 100%);
+    -webkit-mask-image:radial-gradient(125% 100% at 0% 0%,#000 0%,rgba(0,0,0,.22) 88%,transparent 100%);
+    mask-image:radial-gradient(125% 100% at 0% 0%,#000 0%,rgba(0,0,0,.22) 88%,transparent 100%);
+  }
+  :root[data-theme="dark"] .page-bg .beams{-webkit-mask-image:none;mask-image:none;}
+  /* der Abschluss kehrt sich um: am Ende der dunklen Seite steht eine helle Fläche */
+  :root[data-theme="dark"] .dark-panel{
+    --panel:#e8e8e8; --panel-ink:#000; --panel-muted:rgba(0,0,0,.5); --panel-line:rgba(0,0,0,.25);
+    --panel-glow:#fff; --panel-beam:1; --panel-noise:.05; --panel-noise-filter:none; --panel-wrap:#fff;
+    --solid:#000; --on-solid:#fff; --solid-hover:#3d3d3d; --btn-shadow:var(--btn-drop),var(--btn-glow);
+  }
 }
-*{margin:0;padding:0;box-sizing:border-box;}
-html{background:var(--bg);-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+*,*::before,*::after{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;background:var(--bg);}
 body{
-  font-family:'Plus Jakarta Sans','Avenir Next','Segoe UI',system-ui,sans-serif;
-  background:var(--bg); color:var(--text); line-height:1.55; font-size:15px;
+  margin:0; background:var(--bg); color:var(--ink);
+  font:400 16px/1.7 var(--font); word-spacing:.06em;
+  -webkit-font-smoothing:antialiased; overflow-x:clip;
   -webkit-print-color-adjust:exact; print-color-adjust:exact;
 }
+h1,h2,h3,p,ul{margin:0;padding:0;}
+ul{list-style:none;}
+img{display:block;max-width:100%;}
+svg{display:block;width:100%;height:100%;}
 a{color:inherit;text-decoration:none;}
-.page{max-width:960px;margin:0 auto;padding:0 40px 60px;}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;}
+::selection{background:var(--accent);color:#fff;}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+.muted{color:var(--muted);}
 
-/* action bar (screen only) */
-.actions{position:fixed;top:16px;right:16px;display:flex;gap:8px;z-index:10;}
-.actions a,.actions button{
-  display:flex;align-items:center;gap:6px;
-  font-family:inherit;font-size:13px;font-weight:600;letter-spacing:.02em;
-  color:var(--text);background:var(--chip);border:1px solid var(--chip-border);
-  border-radius:999px;padding:8px 14px;cursor:pointer;backdrop-filter:blur(6px);
+/* ---------- Hintergrund: Körnung und schräge Lichtstreifen ---------- */
+.noise{
+  position:fixed; inset:0; z-index:0; opacity:var(--noise); filter:var(--noise-filter); pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)'/%3E%3C/svg%3E");
 }
-.actions .primary{background:var(--accent);border-color:var(--accent);color:#fff;}
-.actions a:hover,.actions button:hover{filter:brightness(1.1);}
-.actions svg{width:16px;height:16px;}
-:root[data-theme="light"] .icon-sun{display:none;}
-:root:not([data-theme="light"]) .icon-moon{display:none;}
-
-/* hero */
-.hero{position:relative;padding-top:150px;}
-.namewrap{width:fit-content;margin:0 auto;}
-.hero .hi{font-size:26px;font-weight:500;color:var(--text);margin-bottom:2px;}
-.hero h1{
-  display:flex;gap:120px;
-  font-size:96px;line-height:1;font-weight:800;color:var(--accent);
-  letter-spacing:.005em;white-space:nowrap;
+.page-bg{
+  position:absolute; inset:0 0 auto 0; height:1800px; z-index:0; overflow:hidden; pointer-events:none;
+  background:linear-gradient(225deg,var(--bg-glow) 0%,var(--bg) 70%);
+  -webkit-mask-image:linear-gradient(#000 0%,#000 50%,transparent 100%);
+  mask-image:linear-gradient(#000 0%,#000 50%,transparent 100%);
 }
-.hero .role{text-align:right;font-size:26px;font-weight:500;color:var(--text);margin-top:6px;}
-.hero .figure{
-  position:absolute;left:50%;bottom:-50px;transform:translateX(-50%);
-  width:600px;max-width:none;z-index:2;pointer-events:none;
+.beams span{
+  position:absolute; top:-209px; left:calc(var(--x) - var(--w) / 2); width:var(--w); height:1269px;
+  background:linear-gradient(#fff 0%,#fff 84%,rgba(255,255,255,0) 100%);
+  transform:skewX(45deg); opacity:var(--beam);
+  -webkit-mask-image:var(--m); mask-image:var(--m);
 }
-.hero .edge{border-bottom:1px solid var(--line);height:30px;}
-
-/* columns */
-.columns{display:grid;grid-template-columns:250px 1fr;gap:56px;padding-top:44px;}
-h2{font-size:30px;font-weight:600;margin-bottom:10px;}
-.rule{border-bottom:1px solid var(--line);margin-bottom:22px;}
-
-/* sidebar */
-.side section{margin-bottom:40px;}
-.contact{list-style:none;margin-bottom:44px;}
-.contact li{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;font-size:14.5px;}
-.contact svg{width:19px;height:19px;flex:none;margin-top:2px;color:var(--soft);}
-.plain{list-style:none;font-size:16px;}
-.plain li{margin-bottom:10px;}
-.skills{list-style:none;}
-.skills li{display:flex;align-items:center;gap:11px;margin-bottom:11px;font-size:14.5px;}
-.skills svg{width:26px;height:26px;flex:none;border-radius:6px;}
-.langs{list-style:none;font-size:15px;}
-.langs li{display:flex;justify-content:space-between;margin-bottom:9px;}
-.langs .lvl{color:var(--muted);font-size:13.5px;}
-.edu h3{font-size:17px;font-weight:700;line-height:1.3;}
-.edu .sub{font-size:15px;color:var(--soft);}
-.edu .inst{color:var(--muted);font-size:14px;margin-top:6px;padding-bottom:8px;}
-.edu .years{font-weight:700;font-size:14px;margin-bottom:18px;}
-.edu .item{border-bottom:1px solid var(--line);margin-bottom:14px;}
-.edu .item:last-child{border-bottom:none;}
-
-/* jobs */
-.job{margin-bottom:34px;break-inside:avoid;}
-.job .dates{color:var(--soft);font-size:15px;}
-.job h3{color:var(--accent);font-size:27px;font-weight:700;line-height:1.15;margin:2px 0 0;}
-.job .company{font-size:19px;font-weight:600;margin-bottom:10px;}
-.job p{border-top:1px solid var(--line);padding-top:12px;color:var(--body);font-size:14.5px;}
-
-@media screen and (max-width:760px){
-  .hero{padding-top:110px;}
-  .hero h1{font-size:44px;gap:56px;}
-  .hero .hi{font-size:17px;}
-  .hero .figure{width:300px;bottom:-25px;}
-  .hero .role{font-size:15px;margin-top:4px;}
-  .columns{grid-template-columns:1fr;gap:10px;}
+.beams span:nth-child(1){--x:33.6%;--w:591px;--m:linear-gradient(90deg,transparent 0%,#000 20%,transparent 36.2%,#000 55.4%,rgba(0,0,0,.13) 67.1%,#000 78.2%,transparent 97.3%);}
+.beams span:nth-child(2){--x:-1.5%;--w:582px;--m:linear-gradient(90deg,transparent 11.4%,#000 25.6%,rgba(0,0,0,.55) 41.7%,rgba(0,0,0,.13) 67.1%,#000 78.2%,transparent 97.3%);}
+.beams span:nth-child(3){--x:33.7%;--w:441px;background:linear-gradient(#fff 0%,#fff 67%,rgba(255,255,255,0) 100%);--m:linear-gradient(90deg,transparent 9.8%,#000 20%,rgba(0,0,0,.55) 28.6%,rgba(0,0,0,.42) 40.1%,#000 48.6%,rgba(0,0,0,.27) 54.5%,rgba(0,0,0,.13) 78.6%,#000 88.6%,transparent 97.3%);}
+.beams span:nth-child(4){--x:50.1%;--w:684px;--m:linear-gradient(90deg,transparent 0%,#000 17.7%,rgba(0,0,0,.55) 26.6%,#000 35.2%,transparent 47.7%,rgba(0,0,0,.13) 69.2%,#000 79.1%,transparent 97.3%);}
+.beams span:nth-child(5){--x:49.1%;--w:426px;--m:linear-gradient(90deg,transparent 0%,#000 20%,rgba(0,0,0,.55) 27.6%,#000 42.3%,transparent 48.6%,rgba(0,0,0,.13) 67.1%,#000 75%,#000 82.4%,rgba(0,0,0,.47) 88.7%,transparent 97.3%);}
+@media (max-width:809px){
+  .beams span:nth-child(1){--x:113.8%;--w:438px;}
+  .beams span:nth-child(2){--x:87.7%;--w:432px;}
+  .beams span:nth-child(3){--x:113.8%;--w:327px;}
+  .beams span:nth-child(4){--x:125.9%;--w:507px;}
+  .beams span:nth-child(5){--x:125.1%;--w:316px;}
 }
+.page-bg .beams{
+  position:absolute; inset:0 0 auto 0; height:200vh;
+  -webkit-mask-image:radial-gradient(125% 100% at 0% 0%,#000 0%,rgba(0,0,0,.22) 88%,transparent 100%);
+  mask-image:radial-gradient(125% 100% at 0% 0%,#000 0%,rgba(0,0,0,.22) 88%,transparent 100%);
+}
+
+/* ---------- Kopfleiste ---------- */
+.nav{position:fixed;inset:0 0 auto 0;z-index:20;padding-inline:var(--gutter);pointer-events:none;}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;max-width:var(--max);height:80px;margin-inline:auto;}
+.nav-inner > *{pointer-events:auto;}
+.wordmark{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--surface);color:var(--logo);}
+.wordmark .logo{width:24px;height:auto;overflow:visible;}
+.logo-smile{transform-box:fill-box;transform-origin:center;transition:transform .5s var(--ease);}
+.wordmark:hover .logo-smile{transform:scaleX(1.14) translateY(1px);}
+.nav-right{display:flex;align-items:center;gap:8px;}
+.lang{display:flex;gap:2px;height:44px;padding:4px;border-radius:22px;background:var(--surface);}
+.lang a{display:grid;place-items:center;min-width:40px;padding-inline:10px;border-radius:18px;font-size:13px;font-weight:600;line-height:1;color:var(--muted);word-spacing:0;transition:background .2s,color .2s;}
+.lang a:hover{color:var(--ink);}
+.lang a[aria-current="true"]{background:var(--solid);color:var(--on-solid);}
+.theme-btn{position:relative;width:44px;height:44px;border-radius:50%;background:var(--surface);}
+.theme-btn svg{position:absolute;inset:12px;width:20px;height:20px;transition:opacity .3s,transform .5s var(--ease);}
+.theme-btn .i-sun,[data-theme="dark"] .theme-btn .i-moon{opacity:0;transform:rotate(-90deg) scale(.5);}
+[data-theme="dark"] .theme-btn .i-sun{opacity:1;transform:none;}
+
+/* ---------- Buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 20px 12px 24px;border-radius:154px;background:var(--solid);color:var(--on-solid);
+  font-weight:500;line-height:1.7;white-space:nowrap;box-shadow:var(--btn-shadow);transition:background .3s;
+}
+.btn:hover{background:var(--solid-hover);}
+.btn svg{width:20px;height:20px;opacity:.5;transition:transform .35s var(--ease),opacity .2s;}
+.btn:hover svg{opacity:1;transform:translateX(3px);}
+.btn--nav{height:44px;padding:0 16px 0 20px;font-size:14px;box-shadow:none;}
+.btn--nav svg{width:18px;height:18px;opacity:.7;}
+.btn--nav:hover svg{transform:translateY(2px);}
+.btn--nav .short{display:none;}
+.btn--outline{background:transparent;color:var(--panel-ink);box-shadow:inset 0 0 0 1px var(--panel-line);}
+.btn--outline:hover{background:var(--panel-ink);color:var(--panel);}
+
+/* ---------- Typo ---------- */
+.display{font:600 clamp(44px,7.5vw,108px)/1.15 var(--font);letter-spacing:-.06em;}
+.tag{
+  display:flex;align-items:center;justify-content:center;gap:24px;padding-inline:24px;
+  font:500 18px/1.2 var(--font);word-spacing:0;color:var(--muted);white-space:nowrap;
+}
+.tag::before,.tag::after{content:"";flex:0 1 69px;min-width:24px;height:1px;opacity:.5;background:linear-gradient(90deg,rgba(84,84,84,0),var(--muted));}
+.tag::after{transform:scaleX(-1);}
+.tag--light{color:var(--panel-muted);}
+.tag--light::before,.tag--light::after{background:linear-gradient(90deg,rgba(84,84,84,0),var(--panel-ink));}
+
+/* ---------- Kopf: Name, Edgar schaut über die Kante der Karte ---------- */
+main{position:relative;z-index:1;padding-inline:var(--gutter);}
+.container{position:relative;width:100%;max-width:var(--max);margin-inline:auto;}
+.hero{padding-top:150px;}
+/* Raster aus zwei Spalten mit Platz für den Kopf dazwischen: Die Lücke ist so breit wie der Kopf samt
+   Ohren (1,52 × Schriftgröße) plus Luft, und der Block ist so weit nach links gerückt, dass „Edgar" und
+   „Heinz" gleich weit von den Ohren entfernt stehen (der Vorname ist breiter als der Nachname).
+   Optischer Ausgleich: Das „r" ist unten offen und wirkt dadurch weiter weg als das „H", deshalb steht
+   „Edgar" 0,1 × Schriftgröße näher am Kopf (Lücke 1,67 statt 1,77, Versatz −0,053 statt −0,103).
+   Die Rolle zählt nicht zur Spaltenbreite. „Hi" und Rolle schließen bündig mit den Buchstaben darunter
+   bzw. darüber ab: Die großen Buchstaben haben mehr Vorbreite als die kleinen. */
+.namewrap{
+  --name:104px;
+  display:grid;grid-template-columns:auto auto;column-gap:calc(var(--name) * 1.67);
+  position:relative;left:calc(var(--name) * -.053);
+  width:fit-content;margin:0 auto;font:inherit;
+}
+.namewrap .n{font:600 var(--name)/1 var(--font);letter-spacing:-.06em;word-spacing:0;white-space:nowrap;}
+.hi,.role{font-size:24px;font-weight:500;line-height:1.3;letter-spacing:-.02em;color:var(--muted);}
+/* n und z stehen bei dieser Laufweite zu eng */
+.n2 .z{margin-left:.04em;}
+.hi{grid-area:1/1;margin-bottom:2px;margin-left:calc(var(--name) * .077 - .08em);}
+.n1{grid-area:2/1;}
+.n2{grid-area:2/2;}
+/* rechtsbündig mit dem z: Breite 0, der Text läuft nach links über */
+.role{grid-area:3/2;justify-self:end;display:flex;justify-content:flex-end;width:0;margin-top:8px;margin-right:calc(var(--name) * -.043 + .03em);white-space:nowrap;}
+/* Die Tischkante im Bild liegt auf der Oberkante der Karte; die Bildbreite folgt der Schriftgröße */
+.sheet-wrap{position:relative;margin-top:34px;--name:104px;}
+.figure{
+  position:absolute;left:50%;bottom:100%;z-index:2;width:calc(var(--name) * 5.77);height:auto;max-width:none;
+  transform:translate(-50%,17.64%);pointer-events:none;
+}
+.sheet{
+  /* deckend, damit die Lichtstreifen hinter der Karte bleiben */
+  padding:64px 60px 72px;border-radius:24px;background:var(--card);box-shadow:var(--ring);
+}
+.columns{display:grid;grid-template-columns:280px minmax(0,1fr);gap:72px;align-items:start;}
+
+/* ---------- Seitenspalte ---------- */
+.side{display:flex;flex-direction:column;gap:44px;}
+/* Überschriften der Seitenspalte: kleiner als „Berufserfahrung" (24 zu 32 px), aber mit demselben Abstand
+   von der Grundlinie zur Linie; die erste ist so weit heruntergerückt, dass Grundlinie und Linie auf
+   einer Höhe mit der Hauptspalte liegen */
+.side h2{font-size:24px;font-weight:600;line-height:1.3;letter-spacing:-.03em;padding-bottom:26px;margin-bottom:20px;border-bottom:1px solid var(--hairline);}
+.contact-box h2{padding-top:8.5px;}
+.contact{display:flex;flex-direction:column;gap:12px;}
+.contact li{display:flex;align-items:center;gap:14px;font-size:14px;line-height:1.5;}
+.contact i{flex:none;display:grid;place-items:center;width:36px;height:36px;padding:9px;border-radius:50%;background:var(--accent-tint);color:var(--accent);transition:background .35s var(--ease),color .35s var(--ease),transform .35s var(--ease);}
+.contact li:hover i{background:var(--accent);color:#fff;transform:rotate(-8deg) scale(1.06);}
+.contact a{transition:color .2s;}
+/* immer zwei Pills pro Zeile; nur wenn ein Paar auf ganz kleinen Handys nicht passt, bricht es um */
+.pills{display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
+.pills .pair{display:flex;flex-wrap:wrap;gap:6px;}
+.pills .pair > span{padding:5px 14px;border-radius:143px;background:var(--surface);font-size:13px;line-height:20px;white-space:nowrap;}
+.skills{display:flex;flex-direction:column;gap:10px;}
+.skills li{display:flex;align-items:center;gap:12px;font-size:14px;line-height:1.5;}
+.skills svg{width:26px;height:26px;flex:none;border-radius:6px;box-shadow:0 0 0 1px var(--edge);}
+.rows li{display:flex;justify-content:space-between;gap:16px;padding-block:10px;border-bottom:1px solid var(--hairline);font-size:14px;line-height:1.5;}
+.rows li:first-child{padding-top:0;}
+.rows li:last-child{border-bottom:0;padding-bottom:0;}
+.rows .lvl{color:var(--muted);}
+.edu .item + .item{margin-top:18px;padding-top:18px;border-top:1px solid var(--hairline);}
+.edu h3{font-size:16px;font-weight:600;line-height:1.4;letter-spacing:-.01em;}
+.edu .sub{font-size:14px;line-height:1.5;}
+.edu .inst{margin-top:6px;font-size:13px;line-height:1.5;color:var(--muted);}
+.edu .years{margin-top:6px;font-size:13px;font-weight:500;line-height:1.5;}
+
+/* ---------- Stationen ---------- */
+.jobs > h2{font-size:32px;font-weight:600;line-height:1.3;letter-spacing:-.03em;margin-bottom:24px;}
+.job{display:grid;grid-template-columns:150px minmax(0,1fr);gap:0 24px;padding-block:30px;border-top:1px solid var(--hairline);break-inside:avoid;}
+.job:last-child{padding-bottom:0;}
+.job .dates{padding-top:6px;font-size:14px;font-weight:500;line-height:1.5;color:var(--muted);word-spacing:0;}
+.job .dates span{white-space:nowrap;}
+.job h3{font-size:22px;font-weight:600;line-height:1.35;letter-spacing:-.02em;}
+.job .company{font-weight:500;color:var(--muted);}
+.job p{margin-top:12px;font-size:15px;line-height:1.7;color:var(--body);}
+
+/* ---------- Abschluss: dunkle Fläche wie auf der Website ---------- */
+.footer{position:relative;z-index:1;padding:8px;margin-top:140px;}
+.dark-panel{
+  position:relative;display:flex;flex-direction:column;gap:80px;padding:100px calc(var(--gutter) - 8px) 60px;border-radius:24px;
+  --panel:#000; --panel-ink:#fff; --panel-muted:rgba(255,255,255,.5); --panel-line:rgba(255,255,255,.25);
+  --panel-glow:#2e2e2e; --panel-beam:.05; --panel-noise:.12; --panel-noise-filter:invert(1); --panel-wrap:rgba(255,255,255,.3);
+  background:var(--panel);color:var(--panel-ink);overflow:clip;
+}
+.dark-bg{
+  position:absolute;inset:0;overflow:hidden;
+  background:radial-gradient(100% 100% at 0% 0%,var(--panel-glow) 0%,var(--panel) 100%);
+  -webkit-mask-image:radial-gradient(125% 100% at 0% 0%,#000 0%,rgba(0,0,0,.22) 88%,transparent 100%);
+  mask-image:radial-gradient(125% 100% at 0% 0%,#000 0%,rgba(0,0,0,.22) 88%,transparent 100%);
+}
+.dark-bg .beams span{opacity:var(--panel-beam);}
+.dark-panel .noise{position:absolute;opacity:var(--panel-noise);filter:var(--panel-noise-filter);}
+.cta{position:relative;display:flex;flex-direction:column;align-items:center;gap:36px;text-align:center;}
+.cta .display span{display:block;}
+.cta .display span + span{color:var(--panel-muted);}
+.cta p{max-width:620px;font-size:20px;font-weight:600;line-height:1.5;letter-spacing:-.02em;}
+.cta-btns{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:12px;}
+.btn-wrap{display:inline-flex;padding:8px;border-radius:90px;background:var(--panel-wrap);}
+.footer-bottom{position:relative;display:flex;align-items:center;justify-content:space-between;gap:36px;width:100%;max-width:var(--max);margin-inline:auto;}
+.copyright{padding:8px 16px;border-block:1px solid var(--panel-line);}
+.socials{display:flex;gap:36px;}
+.social{display:grid;place-items:center;width:44px;height:44px;padding:12px;border-radius:50%;border:1px solid var(--panel-line);transition:background .2s,color .2s;}
+.social:hover{background:var(--panel-ink);color:var(--panel);}
+
+/* ---------- Auftritt beim Laden ---------- */
+@media screen and (prefers-reduced-motion:no-preference){
+  .namewrap,.sheet{animation:rise .9s var(--ease) both;}
+  .sheet{animation-delay:.1s;}
+  .figure{animation:peek 1s var(--ease) .3s both;}
+}
+@keyframes rise{from{opacity:0;transform:translateY(24px);}}
+@keyframes peek{from{opacity:0;transform:translate(-50%,24%);}}
+
+/* ---------- Tablet ---------- */
+@media screen and (max-width:1199px){
+  .sheet{padding:48px 40px 56px;}
+  .columns{grid-template-columns:256px minmax(0,1fr);gap:48px;}
+  .contact li{gap:10px;font-size:13.5px;}
+  .job{display:block;}
+  .job .dates{padding:0 0 4px;}
+  .footer{margin-top:100px;}
+}
+@media screen and (max-width:960px){
+  .namewrap,.sheet-wrap{--name:84px;}
+  .hi,.role{font-size:20px;}
+}
+
+/* ---------- Phone: eine Spalte, Kontakt zuerst, dann die Stationen, dann der Rest ---------- */
+@media screen and (max-width:809px){
+  .nav-inner{height:68px;}
+  .hero{padding-top:108px;}
+  .tag{font-size:16px;}
+  .namewrap,.sheet-wrap{--name:46px;}
+  .hi,.role{font-size:15px;}
+  /* die Rolle bricht unter dem Nachnamen auf zwei Zeilen um */
+  .role{display:block;min-width:100%;margin-top:4px;white-space:normal;text-align:right;line-height:1.25;}
+  .sheet-wrap{margin-top:18px;}
+  .sheet{padding:40px 24px 44px;}
+  .columns{display:flex;flex-direction:column;gap:44px;}
+  .side{display:contents;}
+  .side > *{order:3;}
+  .side > .contact-box{order:1;}
+  .jobs{order:2;}
+  .jobs > h2{font-size:26px;margin-bottom:20px;}
+  .side h2{font-size:22px;padding:0 0 16px;}
+  /* etwas schmalere Pills, damit Art Direction + Creative Direction ab 360 px in eine Zeile passen */
+  .pills .pair > span{padding-inline:12px;}
+  .job{padding-block:24px;}
+  .job h3{font-size:20px;}
+  .footer{margin-top:72px;}
+  .dark-panel{gap:56px;padding:72px 16px 32px;}
+  .cta p{font-size:17px;}
+  .footer-bottom{gap:16px;}
+  .socials{gap:12px;}
+}
+/* zwischen Phone und Tablet passt die Rolle wieder in eine Zeile */
+@media screen and (min-width:560px) and (max-width:809px){
+  .namewrap,.sheet-wrap{--name:68px;}
+  .hi,.role{font-size:17px;}
+  .role{display:flex;min-width:0;white-space:nowrap;line-height:1.3;}
+  .sheet-wrap{margin-top:26px;}
+}
+@media screen and (max-width:420px){
+  .btn--nav{padding:0 14px 0 16px;}
+  .btn--nav .long{display:none;}
+  .btn--nav .short{display:inline;}
+}
+@media screen and (max-width:360px){
+  .namewrap,.sheet-wrap{--name:40px;}
+  .pills .pair > span{padding-inline:10px;font-size:11.5px;}
+  .hi,.role{font-size:14px;}
+}
+
+/* ---------- Druck und PDF: A4, hell, zwei Spalten ---------- */
+/* randlos, damit das Grau die ganze Seite füllt (Seitenränder blieben in Chrome weiß) */
 @page{size:A4;margin:0;}
 @media print{
-  .actions{display:none;}
-  body{font-size:13px;}
-  .page{max-width:100%;padding:0 34px 0;}
-  .hero{padding-top:60px;}
-  /* Umbruch-Abstände: transparente Borders bleiben beim Seitenumbruch erhalten,
-     Margins werden am Seitenanfang verworfen */
-  .job{margin-bottom:0;border-top:30px solid transparent;}
-  .side section{break-inside:avoid;margin-bottom:0;border-top:26px solid transparent;}
-  .contact{margin-bottom:6px;}
-  .columns{padding-top:26px;}
-  .hero h1{font-size:62px;gap:78px;}
-  .hero .hi{font-size:17px;}
-  .hero .role{font-size:17px;margin-top:4px;}
-  .hero .figure{width:390px;bottom:-32px;}
-  .hero .edge{height:22px;}
-  .columns{grid-template-columns:200px 1fr;gap:36px;padding-top:30px;}
-  h2{font-size:24px;}
-  .job h3{font-size:21px;}
-  .job .company{font-size:16px;}
-  .job p{font-size:12.5px;}
-  .contact li{font-size:12px;margin-bottom:12px;}
-  .skills li{font-size:12px;}
-  .skills svg{width:22px;height:22px;}
-  .plain{font-size:13px;}
+  :root{--bg:#f6f6f6;}
+  .nav,.footer,.noise,.page-bg{display:none;}
+  body{font-size:13px;word-spacing:.04em;}
+  main{padding-inline:34px;}
+  .hero{padding-top:42px;}
+  .namewrap,.sheet-wrap{--name:66px;}
+  .hi,.role{font-size:16px;}
+  .role{margin-top:4px;}
+  .sheet-wrap{margin-top:22px;}
+  /* statt der Karte nur ihre Oberkante: eine Karte über drei Seiten bricht unschön um */
+  .sheet{padding:0;border-radius:0;background:none;box-shadow:none;border-top:1px solid var(--faint);}
+  .columns{grid-template-columns:204px minmax(0,1fr);gap:32px;padding-top:4px;}
+  /* Abstände als durchsichtige Ränder: sie bleiben am Seitenanfang erhalten, Außenabstände nicht */
+  .side{display:block;}
+  .side > *{break-inside:avoid;border-top:22px solid transparent;}
+  .side h2{font-size:18px;padding:0 0 11.4px;margin-bottom:12px;}
+  .contact-box h2{padding-top:2.4px;}
+  .contact{gap:8px;}
+  .contact li{gap:10px;font-size:11.5px;}
+  .contact i{width:26px;height:26px;padding:6.5px;}
+  .pills,.pills .pair{gap:4px;}
+  .pills .pair > span{padding:3px 9px;font-size:11px;line-height:16px;box-shadow:0 0 0 1px var(--edge);}
+  .skills{gap:7px;}
+  .skills li{gap:9px;font-size:11.5px;}
+  .skills svg{width:20px;height:20px;border-radius:5px;}
+  .rows li{padding-block:6px;font-size:11.5px;}
+  .edu .item + .item{margin-top:12px;padding-top:12px;}
+  .edu h3{font-size:13px;}
+  .edu .sub{font-size:11.5px;}
+  .edu .inst,.edu .years{margin-top:4px;font-size:11px;}
+  .jobs > h2{font-size:24px;margin:18px 0 0;padding-bottom:10px;border-bottom:1px solid var(--hairline);}
+  /* die Trennlinie hängt unter der Station, damit oben auf einer neuen Seite keine Linie steht */
+  .job{display:block;padding:0;border-top:22px solid transparent;}
+  .job:first-of-type{border-top-width:18px;}
+  .job:not(:last-child)::after{content:"";display:block;margin-top:18px;border-top:1px solid var(--hairline);}
+  .job .dates{padding:0 0 2px;font-size:11.5px;}
+  .job h3{font-size:17px;}
+  .job .company{font-size:13px;}
+  .job p{margin-top:7px;font-size:12px;line-height:1.58;}
 }
 '''.replace('FONT_B64', FONT_B64)
 
+# Dunkles Design schon vor dem ersten Zeichnen setzen, damit nichts hell aufblitzt. Hell ist Standard;
+# der Schlüssel heißt "cv-mode", weil die alte Fassung (dunkel als Standard) "cv-theme" belegt hat.
+HEAD_SCRIPT = '''try{if(localStorage.getItem("cv-mode")==="dark")document.documentElement.dataset.theme="dark";}catch(e){}'''
+
 SCRIPT = '''
 (function(){
-  var r=document.documentElement;
-  try{
-    var saved=localStorage.getItem('cv-theme');
-    if(saved==='light'||saved==='dark'){ if(saved==='light') r.dataset.theme='light'; }
-  }catch(e){}
-  document.getElementById('themeToggle').addEventListener('click',function(){
-    var light = r.dataset.theme==='light';
-    if(light){ delete r.dataset.theme; } else { r.dataset.theme='light'; }
-    try{ localStorage.setItem('cv-theme', light?'dark':'light'); }catch(e){}
+  var r=document.documentElement, b=document.getElementById("themeToggle");
+  function dark(){return r.dataset.theme==="dark";}
+  b.setAttribute("aria-pressed",String(dark()));
+  b.addEventListener("click",function(){
+    var d=!dark();
+    if(d){r.dataset.theme="dark";}else{delete r.dataset.theme;}
+    b.setAttribute("aria-pressed",String(d));
+    try{localStorage.setItem("cv-mode",d?"dark":"light");}catch(e){}
   });
 })();
 '''
 
+BEAMS = '<div class="beams"><span></span><span></span><span></span><span></span><span></span></div>'
+
+def dates_html(d):
+    a, b = d.split(' – ')
+    return f'<span>{a} –</span> <span>{b}</span>'
+
 def render(c):
-    exp_items = ''.join(f'<li>{e}</li>' for e in c['expertise'])
+    ex = c['expertise']
+    exp_items = ''.join('<div class="pair">' + ''.join(f'<span role="listitem">{e}</span>' for e in ex[i:i+2]) + '</div>'
+                        for i in range(0, len(ex), 2))
     skill_items = ''.join(f'<li>{svg}<span>{n}</span></li>' for n, svg in SKILLS)
     lang_items = ''.join(f'<li><span>{l}</span><span class="lvl">{v}</span></li>' for l, v in c['langs'])
     edu_items = ''.join(
@@ -318,9 +613,10 @@ def render(c):
         f'<div class="inst">{i}</div><div class="years">{y}</div></div>'
         for t, s, i, y in c['edu'])
     job_items = ''.join(
-        f'<article class="job"><div class="dates">{d}</div><h3>{t}</h3>'
-        f'<div class="company">{co}</div><p>{txt}</p></article>'
+        f'<article class="job"><div class="dates">{dates_html(d)}</div><div>'
+        f'<h3>{t}</h3><div class="company">{co}</div><p>{txt}</p></div></article>'
         for d, t, co, txt in c['jobs'])
+    cur = lambda l: ' aria-current="true"' if c['lang'] == l else ''
 
     return f'''<!DOCTYPE html>
 <html lang="{c['lang']}">
@@ -328,61 +624,106 @@ def render(c):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="{c['meta']}">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23f70059'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='sans-serif' font-size='14' font-weight='800' fill='white'%3EEH%3C/text%3E%3C/svg%3E">
+<link rel="canonical" href="{c['canonical']}">
+<link rel="alternate" hreflang="de" href="https://cv.edgarheinz.com/">
+<link rel="alternate" hreflang="en" href="https://cv.edgarheinz.com/en/">
+<link rel="icon" href="{FAVICON}">
 <title>{c['title']}</title>
+<script>{HEAD_SCRIPT}</script>
 <style>{CSS}</style>
 </head>
 <body>
-<div class="actions">
-  <a href="{c['other_file']}">{c['other_label']}</a>
-  <button id="themeToggle" aria-label="Toggle theme">
-    <span class="icon-sun">{LUCIDE['sun']}</span>
-    <span class="icon-moon">{LUCIDE['moon']}</span>
-  </button>
-  <button class="primary" onclick="window.print()">{c['print_label']}</button>
-</div>
-<div class="page">
-  <header class="hero">
-    <div class="namewrap">
-      <div class="hi">{c['hi']}</div>
-      <h1><span>Edgar</span><span>Heinz</span></h1>
-      <div class="role">{c['role']}</div>
+<div class="noise" aria-hidden="true"></div>
+<div class="page-bg" aria-hidden="true">{BEAMS}</div>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a class="wordmark" href="https://edgarheinz.com" aria-label="{c['logo_label']}" title="{c['logo_label']}">{LOGO}</a>
+    <div class="nav-right">
+      <div class="lang" role="group" aria-label="{c['lang_label']}">
+        <a href="{c['de_href']}" lang="de"{cur('de')}>DE</a>
+        <a href="{c['en_href']}" lang="en"{cur('en')}>EN</a>
+      </div>
+      <button class="theme-btn" id="themeToggle" type="button" aria-label="{c['theme_label']}" aria-pressed="false"><span class="i-moon">{ICON['moon']}</span><span class="i-sun">{ICON['sun']}</span></button>
+      <a class="btn btn--nav" href="{c['pdf_file']}" download><span class="long">{c['pdf_label']}</span><span class="short">{c['pdf_short']}</span>{ICON['download']}</a>
     </div>
-    <img class="figure" src="data:image/webp;base64,{FIGURE_B64}" alt="Edgar Heinz">
-    <div class="edge"></div>
-  </header>
-  <div class="columns">
-    <aside class="side">
-      <ul class="contact">
-        <li>{LINKEDIN}<a href="https://www.linkedin.com/in/edgar-heinz/">{COMMON['linkedin']}</a></li>
-        <li>{LUCIDE['globe']}<a href="https://edgarheinz.com">{COMMON['site']}</a></li>
-        <li>{LUCIDE['mail']}<a href="mailto:{COMMON['mail']}">{COMMON['mail']}</a></li>
-        <li>{LUCIDE['phone']}<a href="tel:+4917670214158">{COMMON['phone']}</a></li>
-        <li>{LUCIDE['house']}<span>{COMMON['addr']}</span></li>
-      </ul>
-      <section>
-        <h2>{c['h_expertise']}</h2><div class="rule"></div>
-        <ul class="plain">{exp_items}</ul>
-      </section>
-      <section>
-        <h2>{c['h_skills']}</h2><div class="rule"></div>
-        <ul class="skills">{skill_items}</ul>
-      </section>
-      <section>
-        <h2>{c['h_lang']}</h2><div class="rule"></div>
-        <ul class="langs">{lang_items}</ul>
-      </section>
-      <section class="edu">
-        <h2>{c['h_edu']}</h2><div class="rule"></div>
-        {edu_items}
-      </section>
-    </aside>
-    <main>
-      <h2>{c['h_exp']}</h2>
-      {job_items}
-    </main>
   </div>
-</div>
+</header>
+
+<main>
+  <div class="container">
+    <header class="hero">
+      <h1 class="namewrap">
+        <span class="hi">{c['hi']} </span>
+        <span class="n n1">Edgar </span>
+        <span class="n n2">Hein<span class="z">z</span></span>
+        <span class="role"> {c['role']}</span>
+      </h1>
+    </header>
+    <div class="sheet-wrap">
+      <img class="figure" src="data:image/webp;base64,{FIGURE_B64}" width="1300" height="601" alt="Edgar Heinz">
+      <div class="sheet">
+        <div class="columns">
+          <aside class="side">
+            <section class="contact-box">
+              <h2>{c['h_contact']}</h2>
+              <ul class="contact">
+                <li><i>{ICON['linkedin']}</i><a href="https://www.linkedin.com/in/edgar-heinz/">{COMMON['linkedin']}</a></li>
+                <li><i>{ICON['globe']}</i><a href="https://edgarheinz.com">{COMMON['site']}</a></li>
+                <li><i>{ICON['mail']}</i><a href="mailto:{COMMON['mail']}">{COMMON['mail']}</a></li>
+                <li><i>{ICON['phone']}</i><a href="tel:+4917670214158">{COMMON['phone']}</a></li>
+                <li><i>{ICON['house']}</i><span>{COMMON['addr']}</span></li>
+              </ul>
+            </section>
+            <section>
+              <h2>{c['h_expertise']}</h2>
+              <div class="pills" role="list">{exp_items}</div>
+            </section>
+            <section>
+              <h2>{c['h_skills']}</h2>
+              <ul class="skills">{skill_items}</ul>
+            </section>
+            <section>
+              <h2>{c['h_lang']}</h2>
+              <ul class="rows">{lang_items}</ul>
+            </section>
+            <section class="edu">
+              <h2>{c['h_edu']}</h2>
+              {edu_items}
+            </section>
+          </aside>
+          <section class="jobs">
+            <h2>{c['h_exp']}</h2>
+            {job_items}
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="dark-panel">
+    <div class="dark-bg" aria-hidden="true">{BEAMS}</div>
+    <div class="noise" aria-hidden="true"></div>
+    <div class="cta">
+      <div class="tag tag--light">{c['cta_tag']}</div>
+      <h2 class="display"><span>{c['cta_a']}</span><span>{c['cta_b']}</span></h2>
+      <p>{c['cta_text']}</p>
+      <div class="cta-btns">
+        <div class="btn-wrap"><a class="btn" href="mailto:{COMMON['mail']}">{c['cta_mail']}{ICON['arrow']}</a></div>
+        <a class="btn btn--outline" href="https://edgarheinz.com">{c['cta_site']}{ICON['arrow']}</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span class="copyright">© Edgar Heinz, 2026</span>
+      <div class="socials">
+        <a class="social" href="mailto:{COMMON['mail']}" aria-label="E-Mail">{ICON['mail']}</a>
+        <a class="social" href="https://www.linkedin.com/in/edgar-heinz/" target="_blank" rel="noopener" aria-label="LinkedIn">{ICON['linkedin']}</a>
+      </div>
+    </div>
+  </div>
+</footer>
 <script>{SCRIPT}</script>
 </body>
 </html>'''
@@ -392,3 +733,15 @@ os.makedirs(os.path.join(OUT, 'en'), exist_ok=True)
 open(os.path.join(OUT, 'index.html'), 'w', encoding='utf-8').write(render(DE))
 open(os.path.join(OUT, 'en', 'index.html'), 'w', encoding='utf-8').write(render(EN))
 print('written to docs/')
+
+# ---------- PDFs: die Druckansicht der beiden Seiten, per Headless-Chrome ----------
+CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+if '--pdf' in sys.argv:
+    for page, name in (('index.html', 'Edgar-Heinz-Lebenslauf.pdf'), ('en/index.html', 'Edgar-Heinz-Resume.pdf')):
+        target = os.path.join(OUT, name)
+        subprocess.run([CHROME, '--headless=new', '--disable-gpu', '--no-pdf-header-footer',
+                        f'--print-to-pdf={target}', 'file://' + os.path.join(OUT, page)],
+                       check=True, capture_output=True)
+        # dieselbe Datei liegt zusätzlich im Projektordner
+        open(os.path.join(HERE, name), 'wb').write(open(target, 'rb').read())
+        print('pdf:', name)
