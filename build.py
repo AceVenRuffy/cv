@@ -521,7 +521,8 @@ main{position:relative;z-index:1;padding-inline:var(--gutter);}
   .role{display:flex;min-width:0;white-space:nowrap;line-height:1.3;}
   .sheet-wrap{margin-top:26px;}
 }
-@media screen and (max-width:420px){
+/* bis 519px nur „PDF“: bei 430 und 440px (iPhone Pro Max) stieß „Als PDF speichern“ ans Logo (iPhone-Test 2026-11-05) */
+@media screen and (max-width:519px){
   .btn--nav{padding:0 14px 0 16px;}
   .btn--nav .long{display:none;}
   .btn--nav .short{display:inline;}
